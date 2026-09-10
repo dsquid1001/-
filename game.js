@@ -3,6 +3,38 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.m
 const ui = document.getElementById("ui");
 
 try {
+   // ====================
+  // プレイヤー
+  // ====================
+
+  const player = new THREE.Group();
+
+  // 体
+  const body = new THREE.Mesh(
+    new THREE.BoxGeometry(1.2, 1.8, 0.8),
+    new THREE.MeshStandardMaterial({
+      color: 0x3366cc
+    })
+  );
+
+  body.position.y = 0.9;
+  player.add(body);
+
+  // 頭
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 16, 16),
+    new THREE.MeshStandardMaterial({
+      color: 0xffcc99
+    })
+  );
+
+  head.position.y = 2.1;
+  player.add(head);
+
+  // プレイヤーの位置
+  player.position.set(0, 0, 8);
+
+  scene.add(player);
   ui.innerHTML = `
     <h1>異世界人生シミュレーション</h1>
     <p>3D世界を起動中……</p>
@@ -156,35 +188,3 @@ try {
     <p>${error.message}</p>
   `;
 }
-// ====================
-// プレイヤー
-// ====================
-
-const player = new THREE.Group();
-
-// 体
-const body = new THREE.Mesh(
-  new THREE.BoxGeometry(1.2, 1.8, 0.8),
-  new THREE.MeshStandardMaterial({
-    color: 0x3366cc
-  })
-);
-
-body.position.y = 0.9;
-player.add(body);
-
-// 頭
-const head = new THREE.Mesh(
-  new THREE.SphereGeometry(0.55, 16, 16),
-  new THREE.MeshStandardMaterial({
-    color: 0xffcc99
-  })
-);
-
-head.position.y = 2.1;
-player.add(head);
-
-// プレイヤーの位置
-player.position.set(0, 0, 8);
-
-scene.add(player);
