@@ -447,24 +447,56 @@ try {
 
   });
 
-  // =========================
-  // ゲームループ
-  // =========================
-
   renderer.setAnimationLoop(() => {
 
-    renderer.render(scene, camera);
+    // =========================
+    // 一人称カメラ
+    // =========================
+
+    const eyePosition =
+      new THREE.Vector3(
+        0,
+        1.7,
+        0
+      );
+
+    eyePosition.applyMatrix4(
+      player.matrixWorld
+    );
+
+    camera.position.copy(
+      eyePosition
+    );
+
+    // カメラの向いている方向
+    const lookDirection =
+      new THREE.Vector3(
+        0,
+        0,
+        -1
+      );
+
+    const cameraRotation =
+      new THREE.Euler(
+        cameraPitch,
+        cameraYaw,
+        0,
+        "YXZ"
+      );
+
+    lookDirection.applyEuler(
+      cameraRotation
+    );
+
+    camera.lookAt(
+      camera.position.clone().add(
+        lookDirection
+      )
+    );
+
+    renderer.render(
+      scene,
+      camera
+    );
 
   });
-
-} catch (error) {
-
-  console.error(error);
-
-  ui.innerHTML = `
-    <h1>3D起動エラー</h1>
-    <p>ゲームの起動中にエラーが発生しました。</p>
-    <p>${error.message}</p>
-  `;
-
-}
