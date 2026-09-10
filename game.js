@@ -4,6 +4,7 @@ const ui = document.getElementById("ui");
 const game = document.getElementById("game");
 
 try {
+
   // =========================
   // シーン
   // =========================
@@ -22,9 +23,6 @@ try {
     1000
   );
 
-  camera.position.set(0, 7, 18);
-  camera.lookAt(0, 1, 0);
-
   // =========================
   // レンダラー
   // =========================
@@ -33,8 +31,16 @@ try {
     antialias: true
   });
 
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+  );
+
+  renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio, 2)
+  );
+
+  renderer.domElement.style.touchAction = "none";
 
   game.appendChild(renderer.domElement);
 
@@ -42,11 +48,19 @@ try {
   // 光
   // =========================
 
-  const sunlight = new THREE.DirectionalLight(0xffffff, 2);
+  const sunlight = new THREE.DirectionalLight(
+    0xffffff,
+    2
+  );
+
   sunlight.position.set(10, 20, 10);
   scene.add(sunlight);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+  const ambientLight = new THREE.AmbientLight(
+    0xffffff,
+    1
+  );
+
   scene.add(ambientLight);
 
   // =========================
@@ -64,10 +78,11 @@ try {
   scene.add(ground);
 
   // =========================
-  // 家を作る
+  // 家
   // =========================
 
   function createHouse(x, z) {
+
     const house = new THREE.Mesh(
       new THREE.BoxGeometry(6, 4, 6),
       new THREE.MeshStandardMaterial({
@@ -95,12 +110,18 @@ try {
   createHouse(10, -5);
 
   // =========================
-  // 木を作る
+  // 木
   // =========================
 
   function createTree(x, z) {
+
     const trunk = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.5, 0.7, 3, 8),
+      new THREE.CylinderGeometry(
+        0.5,
+        0.7,
+        3,
+        8
+      ),
       new THREE.MeshStandardMaterial({
         color: 0x6b4226
       })
@@ -110,7 +131,11 @@ try {
     scene.add(trunk);
 
     const leaves = new THREE.Mesh(
-      new THREE.SphereGeometry(2.5, 16, 16),
+      new THREE.SphereGeometry(
+        2.5,
+        16,
+        16
+      ),
       new THREE.MeshStandardMaterial({
         color: 0x267a35
       })
@@ -144,7 +169,11 @@ try {
   player.add(body);
 
   const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.55, 16, 16),
+    new THREE.SphereGeometry(
+      0.55,
+      16,
+      16
+    ),
     new THREE.MeshStandardMaterial({
       color: 0xffcc99
     })
@@ -156,6 +185,98 @@ try {
   player.position.set(0, 0, 8);
 
   scene.add(player);
+
+  // 一人称なので自分の体は見せない
+  body.visible = false;
+  head.visible = false;
+
+  // =========================
+  // 視点設定
+  // =========================
+
+  let cameraYaw = 0;
+  let cameraPitch = 0;
+
+  const lookSpeed = 0.005;
+
+  const maxPitch = Math.PI / 2.2;
+
+  // =========================
+  // 移動設定
+  // =========================
+
+  const moveSpeed = 0.12;
+
+  function movePlayer(direction) {
+
+    // プレイヤーが向いている方向
+    const forward = new THREE.Vector3(
+      0,
+      0,
+      -1
+    );
+
+    forward.applyQuaternion(
+      player.quaternion
+    );
+
+    forward.y = 0;
+    forward.normalize();
+
+    // プレイヤーの右方向
+    const right = new THREE.Vector3(
+      1,
+      0,
+      0
+    );
+
+    right.applyQuaternion(
+      player.quaternion
+    );
+
+    right.y = 0;
+    right.normalize();
+
+    if (direction === "up") {
+
+      player.position.add(
+        forward.clone().multiplyScalar(
+          moveSpeed
+        )
+      );
+
+    }
+
+    if (direction === "down") {
+
+      player.position.add(
+        forward.clone().multiplyScalar(
+          -moveSpeed
+        )
+      );
+
+    }
+
+    if (direction === "left") {
+
+      player.position.add(
+        right.clone().multiplyScalar(
+          -moveSpeed
+        )
+      );
+
+    }
+
+    if (direction === "right") {
+
+      player.position.add(
+        right.clone().multiplyScalar(
+          moveSpeed
+        )
+      );
+
+    }
+  }
 
   // =========================
   // 操作パッド
@@ -184,6 +305,7 @@ try {
   const buttons = pad.querySelectorAll("button");
 
   buttons.forEach(button => {
+
     button.style.position = "absolute";
     button.style.width = "55px";
     button.style.height = "55px";
@@ -192,7 +314,16 @@ try {
     button.style.border = "2px solid white";
     button.style.background = "rgba(0,0,0,0.55)";
     button.style.color = "white";
+
+    // iPadの文字選択を防止
+    button.style.userSelect = "none";
+    button.style.webkitUserSelect = "none";
+    button.style.webkitTouchCallout = "none";
+    button.style.webkitTapHighlightColor = "transparent";
+
+    // タッチ操作をゲーム側で処理
     button.style.touchAction = "none";
+
   });
 
   pad.querySelector("#up").style.left = "47px";
@@ -207,52 +338,9 @@ try {
   pad.querySelector("#right").style.left = "94px";
   pad.querySelector("#right").style.top = "47px";
 
-    // =========================
-  // プレイヤー移動
   // =========================
-
-  const moveSpeed = 0.12;
-
-  function movePlayer(direction) {
-
-    // プレイヤーが向いている方向
-    const forward = new THREE.Vector3(0, 0, -1);
-
-    forward.applyQuaternion(player.quaternion);
-    forward.y = 0;
-    forward.normalize();
-
-    // プレイヤーの右方向
-    const right = new THREE.Vector3(1, 0, 0);
-
-    right.applyQuaternion(player.quaternion);
-    right.y = 0;
-    right.normalize();
-
-    if (direction === "up") {
-      player.position.add(
-        forward.clone().multiplyScalar(moveSpeed)
-      );
-    }
-
-    if (direction === "down") {
-      player.position.add(
-        forward.clone().multiplyScalar(-moveSpeed)
-      );
-    }
-
-    if (direction === "left") {
-      player.position.add(
-        right.clone().multiplyScalar(-moveSpeed)
-      );
-    }
-
-    if (direction === "right") {
-      player.position.add(
-        right.clone().multiplyScalar(moveSpeed)
-      );
-    }
-  }
+  // ボタン長押し
+  // =========================
 
   function setupButton(id, direction) {
 
@@ -260,17 +348,22 @@ try {
 
     let timer = null;
 
-    button.addEventListener("pointerdown", event => {
+    button.addEventListener(
+      "pointerdown",
+      event => {
 
-      event.preventDefault();
+        event.preventDefault();
 
-      movePlayer(direction);
-
-      timer = setInterval(() => {
         movePlayer(direction);
-      }, 50);
 
-    });
+        timer = setInterval(() => {
+
+          movePlayer(direction);
+
+        }, 50);
+
+      }
+    );
 
     function stopMoving() {
 
@@ -280,6 +373,7 @@ try {
         timer = null;
 
       }
+
     }
 
     button.addEventListener(
@@ -296,13 +390,15 @@ try {
       "pointerleave",
       stopMoving
     );
+
   }
 
   setupButton("up", "up");
   setupButton("down", "down");
   setupButton("left", "left");
   setupButton("right", "right");
-    // =========================
+
+  // =========================
   // 右側ドラッグで視点操作
   // =========================
 
@@ -311,19 +407,15 @@ try {
   let lastTouchX = 0;
   let lastTouchY = 0;
 
-  let cameraYaw = 0;
-  let cameraPitch = 0;
-
-  const lookSpeed = 0.005;
-
-  renderer.domElement.style.touchAction = "none";
-
   renderer.domElement.addEventListener(
     "pointerdown",
     event => {
 
-      // 右半分だけ視点操作
-      if (event.clientX < window.innerWidth / 2) {
+      // 画面右半分だけ視点操作
+      if (
+        event.clientX <
+        window.innerWidth / 2
+      ) {
         return;
       }
 
@@ -343,7 +435,10 @@ try {
     "pointermove",
     event => {
 
-      if (event.pointerId !== lookPointerId) {
+      if (
+        event.pointerId !==
+        lookPointerId
+      ) {
         return;
       }
 
@@ -357,28 +452,35 @@ try {
       lastTouchY = event.clientY;
 
       // 左右を見る
-      cameraYaw -= deltaX * lookSpeed;
+      cameraYaw -=
+        deltaX * lookSpeed;
 
       // 上下を見る
-      cameraPitch -= deltaY * lookSpeed;
+      cameraPitch -=
+        deltaY * lookSpeed;
 
-      // 上下を見すぎないよう制限
-      const maxPitch = Math.PI / 2.2;
-
+      // 上下の視点制限
       cameraPitch = Math.max(
         -maxPitch,
-        Math.min(maxPitch, cameraPitch)
+        Math.min(
+          maxPitch,
+          cameraPitch
+        )
       );
 
-      // プレイヤー自身も左右を向く
-      player.rotation.y = cameraYaw;
+      // プレイヤーの向きも変更
+      player.rotation.y =
+        cameraYaw;
 
     }
   );
 
   function stopLooking(event) {
 
-    if (event.pointerId === lookPointerId) {
+    if (
+      event.pointerId ===
+      lookPointerId
+    ) {
 
       lookPointerId = null;
 
@@ -395,29 +497,53 @@ try {
     "pointercancel",
     stopLooking
   );
+
   // =========================
   // キーボード操作
   // =========================
 
-  window.addEventListener("keydown", event => {
+  window.addEventListener(
+    "keydown",
+    event => {
 
-    if (event.key === "ArrowUp" || event.key === "w") {
-      movePlayer("up");
+      if (
+        event.key === "ArrowUp" ||
+        event.key === "w"
+      ) {
+
+        movePlayer("up");
+
+      }
+
+      if (
+        event.key === "ArrowDown" ||
+        event.key === "s"
+      ) {
+
+        movePlayer("down");
+
+      }
+
+      if (
+        event.key === "ArrowLeft" ||
+        event.key === "a"
+      ) {
+
+        movePlayer("left");
+
+      }
+
+      if (
+        event.key === "ArrowRight" ||
+        event.key === "d"
+      ) {
+
+        movePlayer("right");
+
+      }
+
     }
-
-    if (event.key === "ArrowDown" || event.key === "s") {
-      movePlayer("down");
-    }
-
-    if (event.key === "ArrowLeft" || event.key === "a") {
-      movePlayer("left");
-    }
-
-    if (event.key === "ArrowRight" || event.key === "d") {
-      movePlayer("right");
-    }
-
-  });
+  );
 
   // =========================
   // UI
@@ -425,33 +551,15 @@ try {
 
   ui.innerHTML = `
     <h1>異世界人生シミュレーション</h1>
-    <p>3D世界 起動成功！</p>
-    <p>操作パッドで移動できます。</p>
+    <p>一人称視点</p>
+    <p>左：移動　右：視点</p>
   `;
 
   // =========================
-  // 画面サイズ変更
+  // カメラ
   // =========================
 
-  window.addEventListener("resize", () => {
-
-    camera.aspect =
-      window.innerWidth / window.innerHeight;
-
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(
-      window.innerWidth,
-      window.innerHeight
-    );
-
-  });
-
-  renderer.setAnimationLoop(() => {
-
-    // =========================
-    // 一人称カメラ
-    // =========================
+  function updateCamera() {
 
     const eyePosition =
       new THREE.Vector3(
@@ -468,7 +576,7 @@ try {
       eyePosition
     );
 
-    // カメラの向いている方向
+    // カメラの向き
     const lookDirection =
       new THREE.Vector3(
         0,
@@ -494,9 +602,55 @@ try {
       )
     );
 
+  }
+
+  // =========================
+  // 画面サイズ変更
+  // =========================
+
+  window.addEventListener(
+    "resize",
+    () => {
+
+      camera.aspect =
+        window.innerWidth /
+        window.innerHeight;
+
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+      );
+
+    }
+  );
+
+  // =========================
+  // ゲームループ
+  // =========================
+
+  renderer.setAnimationLoop(() => {
+
+    player.updateMatrixWorld(true);
+
+    updateCamera();
+
     renderer.render(
       scene,
       camera
     );
 
   });
+
+} catch (error) {
+
+  console.error(error);
+
+  ui.innerHTML = `
+    <h1>3D起動エラー</h1>
+    <p>ゲームの起動中にエラーが発生しました。</p>
+    <p>${error.message}</p>
+  `;
+
+}
