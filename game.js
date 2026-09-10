@@ -207,28 +207,50 @@ try {
   pad.querySelector("#right").style.left = "94px";
   pad.querySelector("#right").style.top = "47px";
 
-  // =========================
+    // =========================
   // プレイヤー移動
   // =========================
 
-  const moveSpeed = 0.15;
+  const moveSpeed = 0.12;
 
   function movePlayer(direction) {
 
+    // プレイヤーが向いている方向
+    const forward = new THREE.Vector3(0, 0, -1);
+
+    forward.applyQuaternion(player.quaternion);
+    forward.y = 0;
+    forward.normalize();
+
+    // プレイヤーの右方向
+    const right = new THREE.Vector3(1, 0, 0);
+
+    right.applyQuaternion(player.quaternion);
+    right.y = 0;
+    right.normalize();
+
     if (direction === "up") {
-      player.position.z -= moveSpeed;
+      player.position.add(
+        forward.clone().multiplyScalar(moveSpeed)
+      );
     }
 
     if (direction === "down") {
-      player.position.z += moveSpeed;
+      player.position.add(
+        forward.clone().multiplyScalar(-moveSpeed)
+      );
     }
 
     if (direction === "left") {
-      player.position.x -= moveSpeed;
+      player.position.add(
+        right.clone().multiplyScalar(-moveSpeed)
+      );
     }
 
     if (direction === "right") {
-      player.position.x += moveSpeed;
+      player.position.add(
+        right.clone().multiplyScalar(moveSpeed)
+      );
     }
   }
 
@@ -236,45 +258,143 @@ try {
 
     const button = document.getElementById(id);
 
+    let timer = null;
+
     button.addEventListener("pointerdown", event => {
+
       event.preventDefault();
+
       movePlayer(direction);
-    });
 
-    button.addEventListener("pointerdown", () => {
-
-      const interval = setInterval(() => {
+      timer = setInterval(() => {
         movePlayer(direction);
       }, 50);
 
-      button.dataset.interval = interval;
-
     });
 
-    button.addEventListener("pointerup", () => {
+    function stopMoving() {
 
-      if (button.dataset.interval) {
-        clearInterval(Number(button.dataset.interval));
-        delete button.dataset.interval;
+      if (timer !== null) {
+
+        clearInterval(timer);
+        timer = null;
+
       }
+    }
 
-    });
+    button.addEventListener(
+      "pointerup",
+      stopMoving
+    );
 
-    button.addEventListener("pointerleave", () => {
+    button.addEventListener(
+      "pointercancel",
+      stopMoving
+    );
 
-      if (button.dataset.interval) {
-        clearInterval(Number(button.dataset.interval));
-        delete button.dataset.interval;
-      }
-
-    });
+    button.addEventListener(
+      "pointerleave",
+      stopMoving
+    );
   }
 
   setupButton("up", "up");
   setupButton("down", "down");
   setupButton("left", "left");
   setupButton("right", "right");
+    // =========================
+  // 右側ドラッグで視点操作
+  // =========================
 
+  let lookPointerId = null;
+
+  let lastTouchX = 0;
+  let lastTouchY = 0;
+
+  let cameraYaw = 0;
+  let cameraPitch = 0;
+
+  const lookSpeed = 0.005;
+
+  renderer.domElement.style.touchAction = "none";
+
+  renderer.domElement.addEventListener(
+    "pointerdown",
+    event => {
+
+      // 右半分だけ視点操作
+      if (event.clientX < window.innerWidth / 2) {
+        return;
+      }
+
+      lookPointerId = event.pointerId;
+
+      lastTouchX = event.clientX;
+      lastTouchY = event.clientY;
+
+      renderer.domElement.setPointerCapture(
+        event.pointerId
+      );
+
+    }
+  );
+
+  renderer.domElement.addEventListener(
+    "pointermove",
+    event => {
+
+      if (event.pointerId !== lookPointerId) {
+        return;
+      }
+
+      const deltaX =
+        event.clientX - lastTouchX;
+
+      const deltaY =
+        event.clientY - lastTouchY;
+
+      lastTouchX = event.clientX;
+      lastTouchY = event.clientY;
+
+      // 左右を見る
+      cameraYaw -= deltaX * lookSpeed;
+
+      // 上下を見る
+      cameraPitch -= deltaY * lookSpeed;
+
+      // 上下を見すぎないよう制限
+      const maxPitch = Math.PI / 2.2;
+
+      cameraPitch = Math.max(
+        -maxPitch,
+        Math.min(maxPitch, cameraPitch)
+      );
+
+      // プレイヤー自身も左右を向く
+      player.rotation.y = cameraYaw;
+
+    }
+  );
+
+  function stopLooking(event) {
+
+    if (event.pointerId === lookPointerId) {
+
+      lookPointerId = null;
+
+    }
+
+  }
+
+  renderer.domElement.addEventListener(
+    "pointerup",
+    stopLooking
+  );
+
+  renderer.domElement.addEventListener(
+    "pointercancel",
+    stopLooking
+  );
   // =========================
   // キーボード操作
   // =========================
