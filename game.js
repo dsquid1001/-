@@ -10,6 +10,7 @@ try {
   // =========================
 
   const scene = new THREE.Scene();
+
   scene.background = new THREE.Color(0x87ceeb);
 
   // =========================
@@ -54,6 +55,7 @@ try {
   );
 
   sunlight.position.set(10, 20, 10);
+
   scene.add(sunlight);
 
   const ambientLight = new THREE.AmbientLight(
@@ -75,6 +77,7 @@ try {
   );
 
   ground.rotation.x = -Math.PI / 2;
+
   scene.add(ground);
 
   // =========================
@@ -91,6 +94,7 @@ try {
     );
 
     house.position.set(x, 2, z);
+
     scene.add(house);
 
     const roof = new THREE.Mesh(
@@ -101,6 +105,7 @@ try {
     );
 
     roof.position.set(x, 5.5, z);
+
     roof.rotation.y = Math.PI / 4;
 
     scene.add(roof);
@@ -128,6 +133,7 @@ try {
     );
 
     trunk.position.set(x, 1.5, z);
+
     scene.add(trunk);
 
     const leaves = new THREE.Mesh(
@@ -142,6 +148,7 @@ try {
     );
 
     leaves.position.set(x, 4, z);
+
     scene.add(leaves);
   }
 
@@ -166,6 +173,7 @@ try {
   );
 
   body.position.y = 0.9;
+
   player.add(body);
 
   const head = new THREE.Mesh(
@@ -180,13 +188,15 @@ try {
   );
 
   head.position.y = 2.1;
+
   player.add(head);
 
   player.position.set(0, 0, 8);
 
   scene.add(player);
 
-  // 一人称なので自分の体は見せない
+  // 一人称なので体を隠す
+
   body.visible = false;
   head.visible = false;
 
@@ -207,9 +217,31 @@ try {
 
   const moveSpeed = 0.12;
 
-  function movePlayer(direction) {
+  // ジョイスティックの入力
 
-    // プレイヤーが向いている方向
+  let joystickX = 0;
+  let joystickY = 0;
+
+  // =========================
+  // 移動処理
+  // =========================
+
+  function movePlayer() {
+
+    const inputX = joystickX;
+    const inputY = joystickY;
+
+    // 入力がほぼゼロなら何もしない
+
+    if (
+      Math.abs(inputX) < 0.01 &&
+      Math.abs(inputY) < 0.01
+    ) {
+      return;
+    }
+
+    // プレイヤーの前方向
+
     const forward = new THREE.Vector3(
       0,
       0,
@@ -221,9 +253,11 @@ try {
     );
 
     forward.y = 0;
+
     forward.normalize();
 
     // プレイヤーの右方向
+
     const right = new THREE.Vector3(
       1,
       0,
@@ -235,168 +269,246 @@ try {
     );
 
     right.y = 0;
+
     right.normalize();
 
-    if (direction === "up") {
+    // 前後
 
-      player.position.add(
-        forward.clone().multiplyScalar(
-          moveSpeed
-        )
-      );
+    player.position.add(
+      forward.multiplyScalar(
+        inputY * moveSpeed
+      )
+    );
 
-    }
+    // 左右
 
-    if (direction === "down") {
-
-      player.position.add(
-        forward.clone().multiplyScalar(
-          -moveSpeed
-        )
-      );
-
-    }
-
-    if (direction === "left") {
-
-      player.position.add(
-        right.clone().multiplyScalar(
-          -moveSpeed
-        )
-      );
-
-    }
-
-    if (direction === "right") {
-
-      player.position.add(
-        right.clone().multiplyScalar(
-          moveSpeed
-        )
-      );
-
-    }
+    player.position.add(
+      right.multiplyScalar(
+        inputX * moveSpeed
+      )
+    );
   }
 
   // =========================
-  // 操作パッド
+  // ジョイスティック
   // =========================
 
-  const pad = document.createElement("div");
+  const joystick = document.createElement("div");
 
-  pad.id = "control-pad";
+  joystick.id = "joystick";
 
-  pad.innerHTML = `
-    <button id="up">▲</button>
-    <button id="left">◀</button>
-    <button id="down">▼</button>
-    <button id="right">▶</button>
-  `;
+  joystick.style.position = "fixed";
+  joystick.style.left = "25px";
+  joystick.style.bottom = "25px";
 
-  pad.style.position = "fixed";
-  pad.style.left = "25px";
-  pad.style.bottom = "25px";
-  pad.style.width = "150px";
-  pad.style.height = "150px";
-  pad.style.zIndex = "100";
+  joystick.style.width = "170px";
+  joystick.style.height = "170px";
 
-  game.appendChild(pad);
+  joystick.style.borderRadius = "50%";
 
-  const buttons = pad.querySelectorAll("button");
+  joystick.style.background =
+    "rgba(0,0,0,0.30)";
 
-  buttons.forEach(button => {
+  joystick.style.border =
+    "3px solid rgba(255,255,255,0.75)";
 
-    button.style.position = "absolute";
-    button.style.width = "55px";
-    button.style.height = "55px";
-    button.style.fontSize = "25px";
-    button.style.borderRadius = "50%";
-    button.style.border = "2px solid white";
-    button.style.background = "rgba(0,0,0,0.55)";
-    button.style.color = "white";
+  joystick.style.zIndex = "100";
 
-    // iPadの文字選択を防止
-    button.style.userSelect = "none";
-    button.style.webkitUserSelect = "none";
-    button.style.webkitTouchCallout = "none";
-    button.style.webkitTapHighlightColor = "transparent";
+  joystick.style.touchAction = "none";
 
-    // タッチ操作をゲーム側で処理
-    button.style.touchAction = "none";
+  joystick.style.userSelect = "none";
+  joystick.style.webkitUserSelect = "none";
+  joystick.style.webkitTouchCallout = "none";
 
-  });
-
-  pad.querySelector("#up").style.left = "47px";
-  pad.querySelector("#up").style.top = "0";
-
-  pad.querySelector("#left").style.left = "0";
-  pad.querySelector("#left").style.top = "47px";
-
-  pad.querySelector("#down").style.left = "47px";
-  pad.querySelector("#down").style.top = "94px";
-
-  pad.querySelector("#right").style.left = "94px";
-  pad.querySelector("#right").style.top = "47px";
+  game.appendChild(joystick);
 
   // =========================
-  // ボタン長押し
+  // ジョイスティックの中の円
   // =========================
 
-  function setupButton(id, direction) {
+  const joystickKnob =
+    document.createElement("div");
 
-    const button = document.getElementById(id);
+  joystickKnob.id = "joystick-knob";
 
-    let timer = null;
+  joystickKnob.style.position = "absolute";
 
-    button.addEventListener(
-      "pointerdown",
-      event => {
+  joystickKnob.style.left = "50%";
+  joystickKnob.style.top = "50%";
 
-        event.preventDefault();
+  joystickKnob.style.width = "70px";
+  joystickKnob.style.height = "70px";
 
-        movePlayer(direction);
+  joystickKnob.style.marginLeft = "-35px";
+  joystickKnob.style.marginTop = "-35px";
 
-        timer = setInterval(() => {
+  joystickKnob.style.borderRadius = "50%";
 
-          movePlayer(direction);
+  joystickKnob.style.background =
+    "rgba(255,255,255,0.65)";
 
-        }, 50);
+  joystickKnob.style.border =
+    "3px solid white";
 
-      }
-    );
+  joystickKnob.style.boxSizing =
+    "border-box";
 
-    function stopMoving() {
+  joystickKnob.style.touchAction = "none";
 
-      if (timer !== null) {
+  joystickKnob.style.userSelect = "none";
+  joystickKnob.style.webkitUserSelect = "none";
+  joystickKnob.style.webkitTouchCallout = "none";
 
-        clearInterval(timer);
-        timer = null;
+  joystick.appendChild(joystickKnob);
 
-      }
+  // =========================
+  // ジョイスティック計算
+  // =========================
 
+  const joystickRadius = 50;
+
+  let joystickPointerId = null;
+
+  function updateJoystick(
+    clientX,
+    clientY
+  ) {
+
+    const rect =
+      joystick.getBoundingClientRect();
+
+    const centerX =
+      rect.left + rect.width / 2;
+
+    const centerY =
+      rect.top + rect.height / 2;
+
+    let x =
+      clientX - centerX;
+
+    let y =
+      clientY - centerY;
+
+    // 移動可能範囲
+
+    const distance =
+      Math.sqrt(
+        x * x + y * y
+      );
+
+    if (
+      distance > joystickRadius
+    ) {
+
+      x =
+        x / distance *
+        joystickRadius;
+
+      y =
+        y / distance *
+        joystickRadius;
     }
 
-    button.addEventListener(
-      "pointerup",
-      stopMoving
-    );
+    // スティックを動かす
 
-    button.addEventListener(
-      "pointercancel",
-      stopMoving
-    );
+    joystickKnob.style.transform =
+      `translate(${x}px, ${y}px)`;
 
-    button.addEventListener(
-      "pointerleave",
-      stopMoving
-    );
+    // 入力値
 
+    joystickX =
+      x / joystickRadius;
+
+    // Yは画面上がマイナスなので反転
+
+    joystickY =
+      -y / joystickRadius;
   }
 
-  setupButton("up", "up");
-  setupButton("down", "down");
-  setupButton("left", "left");
-  setupButton("right", "right");
+  function resetJoystick() {
+
+    joystickPointerId = null;
+
+    joystickX = 0;
+    joystickY = 0;
+
+    joystickKnob.style.transform =
+      "translate(0px, 0px)";
+  }
+
+  // =========================
+  // ジョイスティック操作
+  // =========================
+
+  joystick.addEventListener(
+    "pointerdown",
+    event => {
+
+      event.preventDefault();
+
+      joystickPointerId =
+        event.pointerId;
+
+      joystick.setPointerCapture(
+        event.pointerId
+      );
+
+      updateJoystick(
+        event.clientX,
+        event.clientY
+      );
+    }
+  );
+
+  joystick.addEventListener(
+    "pointermove",
+    event => {
+
+      if (
+        event.pointerId !==
+        joystickPointerId
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      updateJoystick(
+        event.clientX,
+        event.clientY
+      );
+    }
+  );
+
+  joystick.addEventListener(
+    "pointerup",
+    event => {
+
+      if (
+        event.pointerId !==
+        joystickPointerId
+      ) {
+        return;
+      }
+
+      resetJoystick();
+    }
+  );
+
+  joystick.addEventListener(
+    "pointercancel",
+    event => {
+
+      if (
+        event.pointerId !==
+        joystickPointerId
+      ) {
+        return;
+      }
+
+      resetJoystick();
+    }
+  );
 
   // =========================
   // 右側ドラッグで視点操作
@@ -411,7 +523,8 @@ try {
     "pointerdown",
     event => {
 
-      // 画面右半分だけ視点操作
+      // 右半分だけ視点操作
+
       if (
         event.clientX <
         window.innerWidth / 2
@@ -419,15 +532,18 @@ try {
         return;
       }
 
-      lookPointerId = event.pointerId;
+      lookPointerId =
+        event.pointerId;
 
-      lastTouchX = event.clientX;
-      lastTouchY = event.clientY;
+      lastTouchX =
+        event.clientX;
+
+      lastTouchY =
+        event.clientY;
 
       renderer.domElement.setPointerCapture(
         event.pointerId
       );
-
     }
   );
 
@@ -443,35 +559,44 @@ try {
       }
 
       const deltaX =
-        event.clientX - lastTouchX;
+        event.clientX -
+        lastTouchX;
 
       const deltaY =
-        event.clientY - lastTouchY;
+        event.clientY -
+        lastTouchY;
 
-      lastTouchX = event.clientX;
-      lastTouchY = event.clientY;
+      lastTouchX =
+        event.clientX;
 
-      // 左右を見る
+      lastTouchY =
+        event.clientY;
+
+      // 左右
+
       cameraYaw -=
         deltaX * lookSpeed;
 
-      // 上下を見る
+      // 上下
+
       cameraPitch -=
         deltaY * lookSpeed;
 
-      // 上下の視点制限
-      cameraPitch = Math.max(
-        -maxPitch,
-        Math.min(
-          maxPitch,
-          cameraPitch
-        )
-      );
+      // 上下の限界
 
-      // プレイヤーの向きも変更
+      cameraPitch =
+        Math.max(
+          -maxPitch,
+          Math.min(
+            maxPitch,
+            cameraPitch
+          )
+        );
+
+      // プレイヤーの向き
+
       player.rotation.y =
         cameraYaw;
-
     }
   );
 
@@ -483,9 +608,7 @@ try {
     ) {
 
       lookPointerId = null;
-
     }
-
   }
 
   renderer.domElement.addEventListener(
@@ -502,48 +625,79 @@ try {
   // キーボード操作
   // =========================
 
+  const keys = {};
+
   window.addEventListener(
     "keydown",
     event => {
 
-      if (
-        event.key === "ArrowUp" ||
-        event.key === "w"
-      ) {
-
-        movePlayer("up");
-
-      }
-
-      if (
-        event.key === "ArrowDown" ||
-        event.key === "s"
-      ) {
-
-        movePlayer("down");
-
-      }
-
-      if (
-        event.key === "ArrowLeft" ||
-        event.key === "a"
-      ) {
-
-        movePlayer("left");
-
-      }
-
-      if (
-        event.key === "ArrowRight" ||
-        event.key === "d"
-      ) {
-
-        movePlayer("right");
-
-      }
-
+      keys[event.key.toLowerCase()] =
+        true;
     }
   );
+
+  window.addEventListener(
+    "keyup",
+    event => {
+
+      keys[event.key.toLowerCase()] =
+        false;
+    }
+  );
+
+  function updateKeyboard() {
+
+    let x = 0;
+    let y = 0;
+
+    if (
+      keys["w"] ||
+      keys["arrowup"]
+    ) {
+      y += 1;
+    }
+
+    if (
+      keys["s"] ||
+      keys["arrowdown"]
+    ) {
+      y -= 1;
+    }
+
+    if (
+      keys["a"] ||
+      keys["arrowleft"]
+    ) {
+      x -= 1;
+    }
+
+    if (
+      keys["d"] ||
+      keys["arrowright"]
+    ) {
+      x += 1;
+    }
+
+    // キーボード入力がある場合
+
+    if (
+      x !== 0 ||
+      y !== 0
+    ) {
+
+      const length =
+        Math.sqrt(
+          x * x + y * y
+        );
+
+      joystickX =
+        x / length;
+
+      joystickY =
+        y / length;
+
+    }
+  }
 
   // =========================
   // UI
@@ -556,7 +710,7 @@ try {
   `;
 
   // =========================
-  // カメラ
+  // カメラ更新
   // =========================
 
   function updateCamera() {
@@ -576,7 +730,6 @@ try {
       eyePosition
     );
 
-    // カメラの向き
     const lookDirection =
       new THREE.Vector3(
         0,
@@ -601,7 +754,6 @@ try {
         lookDirection
       )
     );
-
   }
 
   // =========================
@@ -622,7 +774,6 @@ try {
         window.innerWidth,
         window.innerHeight
       );
-
     }
   );
 
@@ -632,6 +783,10 @@ try {
 
   renderer.setAnimationLoop(() => {
 
+    updateKeyboard();
+
+    movePlayer();
+
     player.updateMatrixWorld(true);
 
     updateCamera();
@@ -640,7 +795,6 @@ try {
       scene,
       camera
     );
-
   });
 
 } catch (error) {
@@ -652,5 +806,4 @@ try {
     <p>ゲームの起動中にエラーが発生しました。</p>
     <p>${error.message}</p>
   `;
-
 }
